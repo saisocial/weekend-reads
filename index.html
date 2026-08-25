@@ -38,10 +38,9 @@
   .calendar-day.empty{ min-height:30px; padding:0; color:transparent; }
   .stat{ margin-top:10px; font-size:13px; color: var(--ink-soft); }
 
-  .board{ display:grid; grid-template-columns: 208px 260px 1fr 1fr; grid-template-areas: "calendar add waiting read"; gap:18px; align-items:start; }
-  @media (max-width: 1000px){ .board{ grid-template-columns: 190px 1fr 1fr; grid-template-areas: "calendar add add" "calendar waiting read"; } }
-  @media (max-width: 600px){ .board{ grid-template-columns: 1fr; grid-template-areas: "calendar" "add" "waiting" "read"; } }
-  .calendar-col{ grid-area: calendar; }
+  .board{ display:grid; grid-template-columns: 260px 1fr 1fr; grid-template-areas: "add waiting read"; gap:18px; align-items:start; }
+  @media (max-width: 900px){ .board{ grid-template-columns: 1fr 1fr; grid-template-areas: "add add" "waiting read"; } }
+  @media (max-width: 600px){ .board{ grid-template-columns: 1fr; grid-template-areas: "add" "waiting" "read"; } }
   .add-col{ grid-area: add; }
   .waiting-col{ grid-area: waiting; }
   .read-col{ grid-area: read; }
@@ -51,6 +50,7 @@
   .col-header .count{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); text-transform:none; letter-spacing:0; }
 
   form{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .calendar-col{ margin-top:18px; }
   label{ font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:2px; display:block; }
   input[type=text], input[type=url], textarea{ width:100%; font-family:'Inter', sans-serif; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
   textarea{ resize: vertical; min-height: 44px; }
@@ -92,9 +92,6 @@
   </header>
 
   <div class="board">
-    <div class="calendar-col">
-      <div class="calendar" id="calendar" aria-label="Current month calendar"></div>
-    </div>
     <div class="add-col">
       <div class="col-header">Add</div>
       <form id="addForm">
@@ -112,6 +109,9 @@
         </div>
         <button type="submit" class="submit">Save</button>
       </form>
+      <div class="calendar-col">
+        <div class="calendar" id="calendar" aria-label="Current month calendar"></div>
+      </div>
     </div>
 
     <div class="waiting-col drop-zone" id="waitingCol">
