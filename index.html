@@ -31,10 +31,8 @@
   .calendar-nav, .calendar-today-button{ border:0; background:transparent; color:var(--ink-soft); cursor:pointer; }
   .calendar-nav{ width:24px; height:24px; padding:0; border-radius:6px; font-size:18px; line-height:1; }
   .calendar-nav:hover, .calendar-today-button:hover{ background:var(--moss-pale); color:var(--moss); }
-  .calendar-today-button{ padding:4px 5px; border-radius:5px; font-family:'IBM Plex Mono', monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.04em; }
   .calendar-select{ border:0; background:transparent; color:var(--ink); font-family:'Fraunces', serif; font-size:16px; font-weight:500; cursor:pointer; }
-  .calendar-select:focus-visible, .calendar-nav:focus-visible, .calendar-today-button:focus-visible{ outline:2px solid var(--moss); outline-offset:1px; }
-  .calendar-today{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--moss); text-transform:uppercase; letter-spacing:0.04em; }
+  .calendar-select:focus-visible, .calendar-nav:focus-visible{ outline:2px solid var(--moss); outline-offset:1px; }
   .calendar-grid{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:3px; }
   .calendar-weekday{ padding-bottom:4px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; font-size:9px; text-align:center; }
   .calendar-day{ position:relative; display:grid; place-items:center; min-height:30px; border-radius:7px; font-size:12px; }
@@ -177,14 +175,13 @@ function renderCalendar(){
     if(savedDates.has(key)) classes.push('has-items');
     cells.push(`<div class="${classes.join(' ')}">${day}</div>`);
   }
-  calendar.innerHTML = `<div class="calendar-heading"><div class="calendar-controls"><button class="calendar-nav" data-calendar-action="previous" aria-label="Previous month" title="Previous month">&#8249;</button><select class="calendar-select" data-calendar-action="month" aria-label="Select month">${monthOptions}</select><select class="calendar-select" data-calendar-action="year" aria-label="Select year">${yearOptions}</select><button class="calendar-nav" data-calendar-action="next" aria-label="Next month" title="Next month">&#8250;</button></div><button class="calendar-today-button" data-calendar-action="today">Today</button></div><div class="calendar-grid">${cells.join('')}</div>`;
+  calendar.innerHTML = `<div class="calendar-heading"><div class="calendar-controls"><button class="calendar-nav" data-calendar-action="previous" aria-label="Previous month" title="Previous month">&#8249;</button><select class="calendar-select" data-calendar-action="month" aria-label="Select month">${monthOptions}</select><select class="calendar-select" data-calendar-action="year" aria-label="Select year">${yearOptions}</select><button class="calendar-nav" data-calendar-action="next" aria-label="Next month" title="Next month">&#8250;</button></div></div><div class="calendar-grid">${cells.join('')}</div>`;
 }
 
 document.getElementById('calendar').addEventListener('click', (event) => {
-  const action = event.target.closest('[data-calendar-action]')?.dataset.calendarAction;
+  const action = event.target.closest('button[data-calendar-action]')?.dataset.calendarAction;
   if(action === 'previous') calendarDate.setMonth(calendarDate.getMonth() - 1);
   if(action === 'next') calendarDate.setMonth(calendarDate.getMonth() + 1);
-  if(action === 'today') calendarDate = new Date();
   if(action) renderCalendar();
 });
 
