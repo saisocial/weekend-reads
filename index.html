@@ -25,14 +25,17 @@
   header{ margin-bottom: 24px; }
   h1{ font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; letter-spacing: -0.01em; margin: 0 0 4px; }
   .tagline{ color: var(--ink-soft); font-size: 13.5px; margin: 0 0 18px; }
-  .week-strip{ display:flex; align-items:center; gap:6px; padding:9px 12px; background:var(--card); border:1px solid var(--line); border-radius:999px; width:fit-content; }
-  .day{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 7px; border-radius:999px; }
-  .day.weekend{ background: var(--moss-pale); }
-  .day .label{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); letter-spacing:0.03em; }
-  .day.weekend .label{ color: var(--moss); font-weight:500; }
-  .dot{ width:6px; height:6px; border-radius:50%; background: var(--line); }
-  .dot.filled{ background: var(--ink-soft); }
-  .day.weekend .dot.filled{ background: var(--moss); }
+  .calendar{ max-width:360px; padding:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); }
+  .calendar-heading{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .calendar-month{ font-family:'Fraunces', serif; font-size:17px; font-weight:500; }
+  .calendar-today{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--moss); text-transform:uppercase; letter-spacing:0.04em; }
+  .calendar-grid{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:3px; }
+  .calendar-weekday{ padding-bottom:4px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; font-size:9px; text-align:center; }
+  .calendar-day{ position:relative; display:grid; place-items:center; min-height:30px; border-radius:7px; font-size:12px; }
+  .calendar-day.today{ background:var(--moss); color:#fff; font-weight:600; }
+  .calendar-day.has-items::after{ content:''; position:absolute; bottom:4px; width:4px; height:4px; border-radius:50%; background:var(--gold); }
+  .calendar-day.today.has-items::after{ background:#fff; }
+  .calendar-day.empty{ min-height:30px; padding:0; color:transparent; }
   .stat{ margin-top:10px; font-size:13px; color: var(--ink-soft); }
 
   .board{ display:grid; grid-template-columns: 260px 1fr 1fr; grid-template-areas: "add waiting read"; gap:18px; align-items:start; }
@@ -84,7 +87,7 @@
   <header>
     <h1>Weekend Reads</h1>
     <p class="tagline">Save it when you find it. Read it when you're ready. Kept for good, not just for the weekend.</p>
-    <div class="week-strip" id="weekStrip"></div>
+    <div class="calendar" id="calendar" aria-label="Current month calendar"></div>
     <div class="stat" id="stat"></div>
   </header>
 
@@ -125,7 +128,6 @@
 <script>
 const STORAGE_KEY = 'weekend-reads:items';
 const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const STRIP_ORDER = [1,2,3,4,5,6,0];
 
 let items = [];
 let loaded = false;
@@ -138,15 +140,29 @@ function formatDate(iso){
   return d.toLocaleDateString('en-US', opts);
 }
 
-function renderWeekStrip(){
-  const strip = document.getElementById('weekStrip');
-  const counts = {};
-  items.forEach(it => { counts[it.addedDay] = (counts[it.addedDay]||0) + 1; });
-  strip.innerHTML = STRIP_ORDER.map(d => {
-    const isWeekend = d === 0 || d === 6;
-    const filled = counts[d] ? 'filled' : '';
-    return `<div class="day ${isWeekend?'weekend':''}"><span class="dot ${filled}"></span><span class="label">${DAY_LABELS[d][0]}</span></div>`;
-  }).join('');
+function dateKey(date){
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function renderCalendar(){
+  const calendar = document.getElementById('calendar');
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const savedDates = new Set(items.map(item => dateKey(new Date(item.addedAt))));
+  const cells = DAY_LABELS.map(day => `<div class="calendar-weekday">${day[0]}</div>`);
+  for(let i = 0; i < firstDay; i++) cells.push('<div class="calendar-day empty"></div>');
+  for(let day = 1; day <= daysInMonth; day++){
+    const current = new Date(year, month, day);
+    const key = dateKey(current);
+    const classes = ['calendar-day'];
+    if(key === dateKey(today)) classes.push('today');
+    if(savedDates.has(key)) classes.push('has-items');
+    cells.push(`<div class="${classes.join(' ')}">${day}</div>`);
+  }
+  calendar.innerHTML = `<div class="calendar-heading"><span class="calendar-month">${today.toLocaleDateString('en-US', {month:'long', year:'numeric'})}</span><span class="calendar-today">Today</span></div><div class="calendar-grid">${cells.join('')}</div>`;
 }
 
 function domainOf(url){ try{ return new URL(url).hostname.replace(/^www\./,''); }catch(e){ return ''; } }
@@ -182,7 +198,7 @@ function renderList(container, list, isReadCol){
 }
 
 function render(){
-  renderWeekStrip();
+  renderCalendar();
   const unread = items.filter(i => !i.read).sort((a,b) => new Date(b.addedAt) - new Date(a.addedAt));
   const read = items.filter(i => i.read).sort((a,b) => new Date(b.readAt||b.addedAt) - new Date(a.readAt||a.addedAt));
   document.getElementById('waitingCount').textContent = unread.length || '';
