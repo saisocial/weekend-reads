@@ -26,8 +26,14 @@
   h1{ font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; letter-spacing: -0.01em; margin: 0 0 4px; }
   .tagline{ color: var(--ink-soft); font-size: 13.5px; margin: 0 0 18px; }
   .calendar{ width:100%; padding:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); }
-  .calendar-heading{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
-  .calendar-month{ font-family:'Fraunces', serif; font-size:17px; font-weight:500; }
+  .calendar-heading{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; }
+  .calendar-controls{ display:flex; align-items:center; gap:4px; }
+  .calendar-nav, .calendar-today-button{ border:0; background:transparent; color:var(--ink-soft); cursor:pointer; }
+  .calendar-nav{ width:24px; height:24px; padding:0; border-radius:6px; font-size:18px; line-height:1; }
+  .calendar-nav:hover, .calendar-today-button:hover{ background:var(--moss-pale); color:var(--moss); }
+  .calendar-today-button{ padding:4px 5px; border-radius:5px; font-family:'IBM Plex Mono', monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.04em; }
+  .calendar-select{ border:0; background:transparent; color:var(--ink); font-family:'Fraunces', serif; font-size:16px; font-weight:500; cursor:pointer; }
+  .calendar-select:focus-visible, .calendar-nav:focus-visible, .calendar-today-button:focus-visible{ outline:2px solid var(--moss); outline-offset:1px; }
   .calendar-today{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--moss); text-transform:uppercase; letter-spacing:0.04em; }
   .calendar-grid{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:3px; }
   .calendar-weekday{ padding-bottom:4px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; font-size:9px; text-align:center; }
@@ -134,6 +140,7 @@ const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 let items = [];
 let loaded = false;
+let calendarDate = new Date();
 
 function formatDate(iso){
   if(!iso) return '';
@@ -150,11 +157,16 @@ function dateKey(date){
 function renderCalendar(){
   const calendar = document.getElementById('calendar');
   const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const savedDates = new Set(items.map(item => dateKey(new Date(item.addedAt))));
+  const years = new Set();
+  for(let optionYear = today.getFullYear() - 5; optionYear <= today.getFullYear() + 5; optionYear++) years.add(optionYear);
+  items.forEach(item => years.add(new Date(item.addedAt).getFullYear()));
+  const yearOptions = [...years].sort((a, b) => a - b).map(optionYear => `<option value="${optionYear}" ${optionYear === year ? 'selected' : ''}>${optionYear}</option>`).join('');
+  const monthOptions = Array.from({length:12}, (_, index) => `<option value="${index}" ${index === month ? 'selected' : ''}>${new Date(2000, index, 1).toLocaleDateString('en-US', {month:'long'})}</option>`).join('');
   const cells = DAY_LABELS.map(day => `<div class="calendar-weekday">${day[0]}</div>`);
   for(let i = 0; i < firstDay; i++) cells.push('<div class="calendar-day empty"></div>');
   for(let day = 1; day <= daysInMonth; day++){
@@ -165,8 +177,24 @@ function renderCalendar(){
     if(savedDates.has(key)) classes.push('has-items');
     cells.push(`<div class="${classes.join(' ')}">${day}</div>`);
   }
-  calendar.innerHTML = `<div class="calendar-heading"><span class="calendar-month">${today.toLocaleDateString('en-US', {month:'long', year:'numeric'})}</span><span class="calendar-today">Today</span></div><div class="calendar-grid">${cells.join('')}</div>`;
+  calendar.innerHTML = `<div class="calendar-heading"><div class="calendar-controls"><button class="calendar-nav" data-calendar-action="previous" aria-label="Previous month" title="Previous month">&#8249;</button><select class="calendar-select" data-calendar-action="month" aria-label="Select month">${monthOptions}</select><select class="calendar-select" data-calendar-action="year" aria-label="Select year">${yearOptions}</select><button class="calendar-nav" data-calendar-action="next" aria-label="Next month" title="Next month">&#8250;</button></div><button class="calendar-today-button" data-calendar-action="today">Today</button></div><div class="calendar-grid">${cells.join('')}</div>`;
 }
+
+document.getElementById('calendar').addEventListener('click', (event) => {
+  const action = event.target.closest('[data-calendar-action]')?.dataset.calendarAction;
+  if(action === 'previous') calendarDate.setMonth(calendarDate.getMonth() - 1);
+  if(action === 'next') calendarDate.setMonth(calendarDate.getMonth() + 1);
+  if(action === 'today') calendarDate = new Date();
+  if(action) renderCalendar();
+});
+
+document.getElementById('calendar').addEventListener('change', (event) => {
+  const control = event.target.closest('[data-calendar-action]');
+  if(!control) return;
+  if(control.dataset.calendarAction === 'month') calendarDate.setMonth(Number(control.value));
+  if(control.dataset.calendarAction === 'year') calendarDate.setFullYear(Number(control.value));
+  renderCalendar();
+});
 
 function domainOf(url){ try{ return new URL(url).hostname.replace(/^www\./,''); }catch(e){ return ''; } }
 
