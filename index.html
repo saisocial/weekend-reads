@@ -161,7 +161,7 @@ function renderList(container, list, isReadCol){
   container.innerHTML = list.map(it => {
     const domain = it.url ? domainOf(it.url) : '';
     const titleHtml = it.url
-      ? `<a class="item-title" href="${it.url}" target="_blank" rel="noopener">${escapeHtml(it.title || domain || it.url)}</a>`
+      ? `<a class="item-title" href="${escapeHtml(it.url)}" target="_blank" rel="noopener">${escapeHtml(it.title || domain || it.url)}</a>`
       : `<span class="item-title">${escapeHtml(it.title)}</span>`;
     const metaParts = [`Saved ${formatDate(it.addedAt)}`];
     if(isReadCol && it.readAt) metaParts.unshift(`Read ${formatDate(it.readAt)}`);
@@ -194,26 +194,26 @@ function render(){
 
 async function loadItems(){
   try{
-    if(window.storage){
-      const res = await window.storage.get(STORAGE_KEY, false);
-      items = res && res.value ? JSON.parse(res.value) : [];
-    }else{
-      items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    }
-  }catch(e){ items = []; }
+    const res = await fetch('/api/items');
+    if(!res.ok) throw new Error(`Load failed: ${res.status}`);
+    items = await res.json();
+  }catch(e){ items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
   loaded = true;
   render();
 }
 
 async function persist(){
   try{
-    if(window.storage){
-      const ok = await window.storage.set(STORAGE_KEY, JSON.stringify(items), false);
-      if(!ok) console.error('Storage set returned null');
-    }else{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
-  }catch(e){ console.error('Storage error', e); }
+    const res = await fetch('/api/items', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(items)
+    });
+    if(!res.ok) throw new Error(`Save failed: ${res.status}`);
+  }catch(e){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    console.error('Local API unavailable; saved in browser storage', e);
+  }
 }
 
 function moveItem(id, toRead){
