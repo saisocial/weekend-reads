@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekend Reads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EDE8DC;
+    --card: #F5F1E6;
+    --ink: #23262B;
+    --ink-soft: #6B6A60;
+    --moss: #4B6F52;
+    --moss-pale: #DCE6DA;
+    --gold: #A9852F;
+    --line: #D5CEBC;
+    --radius: 14px;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; }
+  .app{ max-width: 1080px; margin: 0 auto; padding: 32px 20px 60px; }
+  header{ margin-bottom: 24px; }
+  h1{ font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .tagline{ color: var(--ink-soft); font-size: 13.5px; margin: 0 0 18px; }
+  .week-strip{ display:flex; align-items:center; gap:6px; padding:9px 12px; background:var(--card); border:1px solid var(--line); border-radius:999px; width:fit-content; }
+  .day{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 7px; border-radius:999px; }
+  .day.weekend{ background: var(--moss-pale); }
+  .day .label{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); letter-spacing:0.03em; }
+  .day.weekend .label{ color: var(--moss); font-weight:500; }
+  .dot{ width:6px; height:6px; border-radius:50%; background: var(--line); }
+  .dot.filled{ background: var(--ink-soft); }
+  .day.weekend .dot.filled{ background: var(--moss); }
+  .stat{ margin-top:10px; font-size:13px; color: var(--ink-soft); }
+
+  .board{ display:grid; grid-template-columns: 260px 1fr 1fr; grid-template-areas: "add waiting read"; gap:18px; align-items:start; }
+  @media (max-width: 900px){ .board{ grid-template-columns: 1fr 1fr; grid-template-areas: "add add" "waiting read"; } }
+  @media (max-width: 600px){ .board{ grid-template-columns: 1fr; grid-template-areas: "add" "waiting" "read"; } }
+  .add-col{ grid-area: add; }
+  .waiting-col{ grid-area: waiting; }
+  .read-col{ grid-area: read; }
+  @media (min-width: 901px){ .add-col{ position: sticky; top: 20px; } }
+
+  .col-header{ font-family:'Fraunces', serif; font-size:12px; font-weight:500; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em; margin:0 0 10px; display:flex; justify-content:space-between; align-items:baseline; }
+  .col-header .count{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); text-transform:none; letter-spacing:0; }
+
+  form{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding:16px; display:flex; flex-direction:column; gap:10px; }
+  label{ font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:2px; display:block; }
+  input[type=text], input[type=url], textarea{ width:100%; font-family:'Inter', sans-serif; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
+  textarea{ resize: vertical; min-height: 44px; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible{ outline: 2px solid var(--moss); outline-offset: 1px; }
+  .submit{ background: var(--moss); color:#fff; border:none; font-size:14px; font-weight:500; padding:10px 16px; border-radius:8px; cursor:pointer; transition: opacity 0.15s ease; }
+  .submit:hover{ opacity:0.9; }
+
+  .drop-zone{ border-radius: var(--radius); transition: background 0.15s ease, box-shadow 0.15s ease; padding: 4px; margin: -4px; }
+  .drop-zone.drag-over{ background: var(--moss-pale); box-shadow: inset 0 0 0 1.5px var(--moss); }
+
+  ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; min-height: 40px; }
+  li{ display:flex; align-items:flex-start; gap:8px; background: var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; transition: opacity 0.2s ease; cursor: grab; }
+  li:active{ cursor: grabbing; }
+  li.dragging{ opacity: 0.35; }
+  li.read{ opacity: 0.75; }
+  .handle{ flex-shrink:0; color:var(--line); font-size:13px; line-height:1; margin-top:3px; user-select:none; }
+  .item-body{ flex:1; min-width:0; }
+  .item-title{ font-size:14px; font-weight:500; color:var(--ink); text-decoration:none; }
+  a.item-title:hover{ text-decoration:underline; }
+  li.read .item-title{ text-decoration: line-through; }
+  .meta{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-top:3px; }
+  .note{ font-size:12.5px; font-style:italic; color:var(--ink-soft); margin-top:4px; }
+  .item-actions{ flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .move, .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; padding:1px 3px; line-height:1; }
+  .move{ font-size:14px; }
+  .move:hover{ color: var(--moss); }
+  .del{ font-size:15px; }
+  .del:hover{ color: var(--gold); }
+  .empty{ color: var(--ink-soft); font-size:13px; padding:14px 4px; }
+  .hint{ font-size: 11px; color: var(--ink-soft); margin: -4px 0 10px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Weekend Reads</h1>
+    <p class="tagline">Save it when you find it. Read it when you're ready. Kept for good, not just for the weekend.</p>
+    <div class="week-strip" id="weekStrip"></div>
+    <div class="stat" id="stat"></div>
+  </header>
+
+  <div class="board">
+    <div class="add-col">
+      <div class="col-header">Add</div>
+      <form id="addForm">
+        <div>
+          <label for="titleInput">Title</label>
+          <input type="text" id="titleInput" placeholder="What is it?" />
+        </div>
+        <div>
+          <label for="urlInput">Link (optional)</label>
+          <input type="url" id="urlInput" placeholder="https://..." />
+        </div>
+        <div>
+          <label for="noteInput">Why you saved it (optional)</label>
+          <textarea id="noteInput" placeholder="One line, so future-you remembers"></textarea>
+        </div>
+        <button type="submit" class="submit">Save</button>
+      </form>
+    </div>
+
+    <div class="waiting-col drop-zone" id="waitingCol">
+      <div class="col-header"><span>Waiting to read</span><span class="count" id="waitingCount"></span></div>
+      <p class="hint">Drag a card here to un-read it</p>
+      <ul id="unreadList"></ul>
+    </div>
+
+    <div class="read-col drop-zone" id="readCol">
+      <div class="col-header"><span>Already read</span><span class="count" id="readCount"></span></div>
+      <p class="hint">Drag a card here once you've read it</p>
+      <ul id="readList"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'weekend-reads:items';
+const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const STRIP_ORDER = [1,2,3,4,5,6,0];
+
+let items = [];
+let loaded = false;
+
+function formatDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const opts = d.getFullYear() === now.getFullYear() ? {month:'short', day:'numeric'} : {month:'short', day:'numeric', year:'numeric'};
+  return d.toLocaleDateString('en-US', opts);
+}
+
+function renderWeekStrip(){
+  const strip = document.getElementById('weekStrip');
+  const counts = {};
+  items.forEach(it => { counts[it.addedDay] = (counts[it.addedDay]||0) + 1; });
+  strip.innerHTML = STRIP_ORDER.map(d => {
+    const isWeekend = d === 0 || d === 6;
+    const filled = counts[d] ? 'filled' : '';
+    return `<div class="day ${isWeekend?'weekend':''}"><span class="dot ${filled}"></span><span class="label">${DAY_LABELS[d][0]}</span></div>`;
+  }).join('');
+}
+
+function domainOf(url){ try{ return new URL(url).hostname.replace(/^www\./,''); }catch(e){ return ''; } }
+
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function renderList(container, list, isReadCol){
+  if(list.length === 0){
+    container.innerHTML = `<div class="empty">${isReadCol ? 'Nothing here yet — drag a card over once you\'ve read it.' : 'Nothing waiting. Add something on the left.'}</div>`;
+    return;
+  }
+  container.innerHTML = list.map(it => {
+    const domain = it.url ? domainOf(it.url) : '';
+    const titleHtml = it.url
+      ? `<a class="item-title" href="${it.url}" target="_blank" rel="noopener">${escapeHtml(it.title || domain || it.url)}</a>`
+      : `<span class="item-title">${escapeHtml(it.title)}</span>`;
+    const metaParts = [`Saved ${formatDate(it.addedAt)}`];
+    if(isReadCol && it.readAt) metaParts.unshift(`Read ${formatDate(it.readAt)}`);
+    if(domain) metaParts.push(domain);
+    return `<li class="${it.read?'read':''}" data-id="${it.id}" draggable="true">
+      <span class="handle" aria-hidden="true">⠿</span>
+      <div class="item-body">
+        ${titleHtml}
+        <div class="meta">${metaParts.join(' · ')}</div>
+        ${it.note ? `<div class="note">${escapeHtml(it.note)}</div>` : ''}
+      </div>
+      <div class="item-actions">
+        <button class="move" data-action="move" aria-label="${it.read ? 'Move to Waiting to read' : 'Move to Already read'}">${it.read ? '←' : '→'}</button>
+        <button class="del" data-action="delete" aria-label="Delete">×</button>
+      </div>
+    </li>`;
+  }).join('');
+}
+
+function render(){
+  renderWeekStrip();
+  const unread = items.filter(i => !i.read).sort((a,b) => new Date(b.addedAt) - new Date(a.addedAt));
+  const read = items.filter(i => i.read).sort((a,b) => new Date(b.readAt||b.addedAt) - new Date(a.readAt||a.addedAt));
+  document.getElementById('waitingCount').textContent = unread.length || '';
+  document.getElementById('readCount').textContent = read.length || '';
+  document.getElementById('stat').textContent = loaded ? `${items.length} saved all time · ${unread.length} waiting · ${read.length} read` : '';
+  renderList(document.getElementById('unreadList'), unread, false);
+  renderList(document.getElementById('readList'), read, true);
+}
+
+async function loadItems(){
+  try{
+    if(window.storage){
+      const res = await window.storage.get(STORAGE_KEY, false);
+      items = res && res.value ? JSON.parse(res.value) : [];
+    }else{
+      items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    }
+  }catch(e){ items = []; }
+  loaded = true;
+  render();
+}
+
+async function persist(){
+  try{
+    if(window.storage){
+      const ok = await window.storage.set(STORAGE_KEY, JSON.stringify(items), false);
+      if(!ok) console.error('Storage set returned null');
+    }else{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+  }catch(e){ console.error('Storage error', e); }
+}
+
+function moveItem(id, toRead){
+  const it = items.find(i => i.id === id);
+  if(!it || it.read === toRead) return;
+  it.read = toRead;
+  it.readAt = toRead ? new Date().toISOString() : null;
+  render();
+  persist();
+}
+
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const titleEl = document.getElementById('titleInput');
+  const urlEl = document.getElementById('urlInput');
+  const noteEl = document.getElementById('noteInput');
+  const title = titleEl.value.trim();
+  const url = urlEl.value.trim();
+  const note = noteEl.value.trim();
+  if(!title && !url) return;
+
+  const now = new Date();
+  items.unshift({
+    id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+    title: title, url: url, note: note,
+    addedDay: now.getDay(), addedAt: now.toISOString(),
+    read: false, readAt: null
+  });
+  titleEl.value = ''; urlEl.value = ''; noteEl.value = '';
+  render();
+  await persist();
+});
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const li = btn.closest('li');
+  const id = li && li.dataset.id;
+  if(!id) return;
+  if(btn.dataset.action === 'move'){
+    const it = items.find(i => i.id === id);
+    if(it) moveItem(id, !it.read);
+  } else if(btn.dataset.action === 'delete'){
+    items = items.filter(i => i.id !== id);
+    render();
+    await persist();
+  }
+});
+
+document.addEventListener('dragstart', (e) => {
+  const li = e.target.closest('li[draggable="true"]');
+  if(!li) return;
+  e.dataTransfer.setData('text/plain', li.dataset.id);
+  e.dataTransfer.effectAllowed = 'move';
+  li.classList.add('dragging');
+});
+document.addEventListener('dragend', (e) => {
+  const li = e.target.closest('li[draggable="true"]');
+  if(li) li.classList.remove('dragging');
+});
+
+[['waitingCol', false], ['readCol', true]].forEach(([elId, toRead]) => {
+  const zone = document.getElementById(elId);
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', (e) => { if(!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const id = e.dataTransfer.getData('text/plain');
+    if(id) moveItem(id, toRead);
+  });
+});
+
+loadItems();
+</script>
+</body>
+</html>
