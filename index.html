@@ -25,7 +25,7 @@
   header{ margin-bottom: 24px; }
   h1{ font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; letter-spacing: -0.01em; margin: 0 0 4px; }
   .tagline{ color: var(--ink-soft); font-size: 13.5px; margin: 0 0 18px; }
-  .calendar{ max-width:360px; padding:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); }
+  .calendar{ width:100%; padding:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); }
   .calendar-heading{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
   .calendar-month{ font-family:'Fraunces', serif; font-size:17px; font-weight:500; }
   .calendar-today{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--moss); text-transform:uppercase; letter-spacing:0.04em; }
@@ -38,9 +38,10 @@
   .calendar-day.empty{ min-height:30px; padding:0; color:transparent; }
   .stat{ margin-top:10px; font-size:13px; color: var(--ink-soft); }
 
-  .board{ display:grid; grid-template-columns: 260px 1fr 1fr; grid-template-areas: "add waiting read"; gap:18px; align-items:start; }
-  @media (max-width: 900px){ .board{ grid-template-columns: 1fr 1fr; grid-template-areas: "add add" "waiting read"; } }
-  @media (max-width: 600px){ .board{ grid-template-columns: 1fr; grid-template-areas: "add" "waiting" "read"; } }
+  .board{ display:grid; grid-template-columns: 208px 260px 1fr 1fr; grid-template-areas: "calendar add waiting read"; gap:18px; align-items:start; }
+  @media (max-width: 1000px){ .board{ grid-template-columns: 190px 1fr 1fr; grid-template-areas: "calendar add add" "calendar waiting read"; } }
+  @media (max-width: 600px){ .board{ grid-template-columns: 1fr; grid-template-areas: "calendar" "add" "waiting" "read"; } }
+  .calendar-col{ grid-area: calendar; }
   .add-col{ grid-area: add; }
   .waiting-col{ grid-area: waiting; }
   .read-col{ grid-area: read; }
@@ -87,11 +88,13 @@
   <header>
     <h1>Weekend Reads</h1>
     <p class="tagline">Save it when you find it. Read it when you're ready. Kept for good, not just for the weekend.</p>
-    <div class="calendar" id="calendar" aria-label="Current month calendar"></div>
     <div class="stat" id="stat"></div>
   </header>
 
   <div class="board">
+    <div class="calendar-col">
+      <div class="calendar" id="calendar" aria-label="Current month calendar"></div>
+    </div>
     <div class="add-col">
       <div class="col-header">Add</div>
       <form id="addForm">
